@@ -1,13 +1,11 @@
-name: Node.js CI Pipeline
+name: CI-CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,3 +22,20 @@ jobs:
 
     - name: Run Tests
       run: npm test
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd app || mkdir app && cd app
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/saicharans9/firstproject.git .
+          fi
+          npm install
+          pkill node || true
+          node test.js &
